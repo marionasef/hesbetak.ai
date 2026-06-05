@@ -12,11 +12,18 @@ function LoginPage() {
   const { t } = useI18n();
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => nav({ to: "/dashboard" }), 600);
+    setTimeout(() => {
+      if (email.toLowerCase().includes("admin")) {
+        nav({ to: "/admin" });
+      } else {
+        nav({ to: "/dashboard" });
+      }
+    }, 600);
   };
 
   return (
@@ -26,7 +33,14 @@ function LoginPage() {
       <form onSubmit={submit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email">{t("email")}</Label>
-          <Input id="email" type="email" placeholder="you@business.com" required />
+          <Input 
+            id="email" 
+            type="email" 
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@business.com" 
+            required 
+          />
         </div>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">

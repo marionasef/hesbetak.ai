@@ -64,9 +64,28 @@ const dict = {
     chooseCurrencyTitle: "Choose your currency",
     chooseCurrencyDesc: "You can add more later.",
     setupAccountsTitle: "Setup chart of accounts",
-    setupAccountsDesc: "Pick defaults or let AI do it.",
-    modeManual: "Manual",
-    modeAI: "AI Setup",
+    // Onboarding COA Setup
+    setupAccountsDesc: "Answer a few simple questions and we'll build your chart of accounts automatically.",
+    qPhysicalProducts: "Do you sell physical products?",
+    qPhysicalProductsHint: "We'll add 'Inventory' and 'Cost of Goods Sold' accounts to track your merchandise.",
+    qEmployees: "Do you have employees?",
+    qEmployeesHint: "We'll add 'Payroll' and 'Payroll Taxes' expense accounts.",
+    qLoans: "Do you have business loans?",
+    qLoansHint: "We'll add 'Loans Payable' and 'Interest Expense' accounts.",
+    qServices: "Do you provide services?",
+    qServicesHint: "We'll add 'Service Revenue' account to track your consulting or service income.",
+    skipCOA: "Skip and use default",
+    skipCOAMsg: "Default chart of accounts created. You can customize it later.",
+    customAccountsPreview: "Your Chart of Accounts",
+    addCustomAccount: "Add Account Manually",
+
+    // Dashboard Accounts Modals
+    editAccount: "Edit Account",
+    accountName: "Account Name",
+    accountCode: "Account Code",
+    saveChanges: "Save Changes",
+    cancel: "Cancel",
+
     uploadPDFs: "Upload PDF statements",
     dropBankPDFs: "Drop bank or invoice PDFs",
     recordVideo: "Record a 30s video",
@@ -207,6 +226,18 @@ const dict = {
     roleAccountant: "Accountant",
     roleViewer: "Viewer",
     inviteMember: "Invite member",
+
+    // Admin Dashboard
+    adminDashboard: "Admin Dashboard",
+    organizations: "Organizations",
+    manageOrgs: "Manage system tenants, plans, and users.",
+    plan: "Plan",
+    users: "Users",
+    deleteOrg: "Delete",
+    confirmDeleteOrg: "Delete Organization?",
+    deleteOrgWarning: "This action cannot be undone. All users, data, and active subscriptions associated with this organization will be permanently deleted.",
+    deleteConfirm: "Yes, Delete Organization",
+    orgDeleted: "Organization deleted successfully",
   },
   ar: {
     // Brand & General
@@ -269,9 +300,28 @@ const dict = {
     chooseCurrencyTitle: "اختر عملتك",
     chooseCurrencyDesc: "يمكنك إضافة المزيد لاحقاً.",
     setupAccountsTitle: "إعداد شجرة الحسابات",
-    setupAccountsDesc: "اختر الإعدادات الافتراضية أو دع الذكاء الاصطناعي يتولى الأمر.",
-    modeManual: "يدوي",
-    modeAI: "إعداد بالذكاء الاصطناعي",
+    // Onboarding COA Setup
+    setupAccountsDesc: "أجب عن بعض الأسئلة البسيطة وسنقوم بإنشاء دليل الحسابات الخاص بك تلقائياً.",
+    qPhysicalProducts: "هل تبيع منتجات مادية؟",
+    qPhysicalProductsHint: "سنضيف حسابات 'المخزون' و'تكلفة البضائع المباعة' لتتبع بضاعتك.",
+    qEmployees: "هل لديك موظفون؟",
+    qEmployeesHint: "سنضيف حسابات مصروفات 'الرواتب' و'ضرائب الرواتب'.",
+    qLoans: "هل لديك قروض تجارية؟",
+    qLoansHint: "سنضيف حسابات 'القروض المستحقة' و'مصروفات الفوائد'.",
+    qServices: "هل تقدم خدمات؟",
+    qServicesHint: "سنضيف حساب 'إيرادات الخدمات' لتتبع دخلك من الاستشارات أو الخدمات.",
+    skipCOA: "تخطي واستخدام الافتراضي",
+    skipCOAMsg: "تم إنشاء دليل الحسابات الافتراضي. يمكنك تخصيصه لاحقاً.",
+    customAccountsPreview: "دليل الحسابات الخاص بك",
+    addCustomAccount: "إضافة حساب يدوياً",
+
+    // Dashboard Accounts Modals
+    editAccount: "تعديل الحساب",
+    accountName: "اسم الحساب",
+    accountCode: "رمز الحساب",
+    saveChanges: "حفظ التغييرات",
+    cancel: "إلغاء",
+
     uploadPDFs: "رفع كشوفات PDF",
     dropBankPDFs: "أسقط كشوفات البنك أو الفواتير",
     recordVideo: "سجل فيديو 30 ثانية",
@@ -412,6 +462,18 @@ const dict = {
     roleAccountant: "محاسب",
     roleViewer: "مشاهد",
     inviteMember: "دعوة عضو",
+
+    // Admin Dashboard
+    adminDashboard: "لوحة تحكم المسؤول",
+    organizations: "المؤسسات",
+    manageOrgs: "إدارة المؤسسات، الباقات، والمستخدمين.",
+    plan: "باقة",
+    users: "المستخدمين",
+    deleteOrg: "حذف",
+    confirmDeleteOrg: "حذف المؤسسة؟",
+    deleteOrgWarning: "لا يمكن التراجع عن هذا الإجراء. سيتم حذف جميع المستخدمين والبيانات والاشتراكات النشطة المرتبطة بهذه المؤسسة بشكل دائم.",
+    deleteConfirm: "نعم، احذف المؤسسة",
+    orgDeleted: "تم حذف المؤسسة بنجاح",
   },
 } as const;
 

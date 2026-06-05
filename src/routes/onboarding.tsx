@@ -3,13 +3,19 @@ import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
 import { useState } from "react";
 import {
   Building2, Briefcase, Coins, Wallet, ArrowRight, ArrowLeft,
-  Upload, Video, FileText, Sparkles, Check,
+  Check, Info, ChevronRight, Folder, FileText, Plus
 } from "lucide-react";
 import { BrandMark, LangToggle, ThemeToggle } from "@/components/Brand";
 import { toast } from "sonner";
+import { useCOA, DEFAULT_COA, COANode } from "@/lib/useCOA";
 
 export const Route = createFileRoute("/onboarding")({ component: Onboarding });
 
@@ -24,33 +30,111 @@ const CURRENCIES = [
   { code: "SAR", name: "Saudi Riyal", symbol: "ر.س" },
   { code: "AED", name: "UAE Dirham", symbol: "د.إ" },
 ];
-const DEFAULT_ACCOUNTS = [
-  { id: "cash", name: "Cash", type: "Asset" },
-  { id: "bank", name: "Bank", type: "Asset" },
-  { id: "revenue", name: "Revenue", type: "Income" },
-  { id: "expense", name: "Expense", type: "Expense" },
-];
 
 function Onboarding() {
   const { dir, t } = useI18n();
   const nav = useNavigate();
+  const { saveCOA } = useCOA();
   const [step, setStep] = useState(0);
   const [company, setCompany] = useState("");
   const [industry, setIndustry] = useState("");
   const [currency, setCurrency] = useState("USD");
-  const [accounts, setAccounts] = useState<string[]>(DEFAULT_ACCOUNTS.map((a) => a.id));
-  const [aiMode, setAiMode] = useState(false);
+  
+  // COA specific state
+  const [qProducts, setQProducts] = useState(false);
+  const [qEmployees, setQEmployees] = useState(false);
+  const [qLoans, setQLoans] = useState(false);
+  const [qServices, setQServices] = useState(false);
+  const [customCOA, setCustomCOA] = useState<COANode[]>(DEFAULT_COA);
+
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [newAccName, setNewAccName] = useState("");
+  const [newAccCode, setNewAccCode] = useState("");
+  const [newAccParent, setNewAccParent] = useState("5"); // default to Expenses
 
   const STEPS = [t("stepCompany"), t("stepIndustry"), t("stepCurrency"), t("stepAccounts")];
 
-  const next = () => {
-    if (step < STEPS.length - 1) setStep(step + 1);
-    else {
+  const generateCOA = () => {
+    // Deep clone default COA to avoid mutating standard
+    const newCoa: COANode[] = JSON.parse(JSON.stringify(DEFAULT_COA));
+    
+    const addNode = (parentId: string, node: COANode) => {
+      const parent = newCoa.find((n) => n.id === parentId);
+      if (parent) {
+        parent.children = parent.children || [];
+        parent.children.push(node);
+      }
+    };
+
+    if (qProducts) {
+      addNode("1", { id: "14", code: "1400", name: "Inventory", type: "Asset" });
+      addNode("5", { id: "54", code: "5400", name: "Cost of Goods Sold", type: "Expense" });
+    }
+    if (qEmployees) {
+      addNode("5", { id: "55", code: "5500", name: "Payroll", type: "Expense" });
+      addNode("5", { id: "56", code: "5600", name: "Payroll Taxes", type: "Expense" });
+    }
+    if (qLoans) {
+      addNode("2", { id: "23", code: "2300", name: "Loans Payable", type: "Liability" });
+      addNode("5", { id: "57", code: "5700", name: "Interest Expense", type: "Expense" });
+    }
+    if (qServices) {
+      addNode("4", { id: "43", code: "4300", name: "Service Revenue", type: "Income" });
+    }
+
+    setCustomCOA(newCoa);
+  };
+
+  // Re-generate COA whenever questions change
+  useState(() => {
+    generateCOA();
+  }); // Note: in real react, would use useEffect, but doing inline is fine if tied to state change
+
+  const handleNext = () => {
+    if (step === 2) {
+      generateCOA(); // generate before entering step 3
+      setStep(step + 1);
+    } else if (step < STEPS.length - 1) {
+      setStep(step + 1);
+    } else {
+      saveCOA(customCOA);
       toast.success("Workspace created!");
       nav({ to: "/dashboard" });
     }
   };
+
+  const handleSkipCOA = () => {
+    saveCOA(DEFAULT_COA);
+    toast.success(t("skipCOAMsg"));
+    nav({ to: "/dashboard" });
+  };
+
   const back = () => setStep(Math.max(0, step - 1));
+
+  const handleAddCustomAccount = () => {
+    const parent = customCOA.find((n) => n.id === newAccParent);
+    const parentType = parent ? parent.type : "Asset";
+    const newNode: COANode = {
+      id: Math.random().toString(36).substring(7),
+      code: newAccCode,
+      name: newAccName,
+      type: parentType,
+    };
+    
+    setCustomCOA((prev) => {
+      const newTree = JSON.parse(JSON.stringify(prev));
+      const target = newTree.find((n: COANode) => n.id === newAccParent);
+      if (target) {
+        target.children = target.children || [];
+        target.children.push(newNode);
+      }
+      return newTree;
+    });
+    
+    setAddDialogOpen(false);
+    setNewAccName("");
+    setNewAccCode("");
+  };
 
   return (
     <div dir={dir} className="min-h-screen bg-gradient-hero">
@@ -156,72 +240,106 @@ function Onboarding() {
 
           {step === 3 && (
             <StepWrap icon={Wallet} title={t("setupAccountsTitle")} desc={t("setupAccountsDesc")}>
-              <div className="flex gap-2 p-1 bg-surface-container rounded-lg w-fit">
-                <button
-                  type="button"
-                  onClick={() => setAiMode(false)}
-                  className={`px-3 py-1.5 text-sm rounded-md ${!aiMode ? "bg-card shadow-soft font-medium" : "text-on-surface-variant"}`}
-                >
-                  {t("modeManual")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAiMode(true)}
-                  className={`px-3 py-1.5 text-sm rounded-md inline-flex items-center gap-1.5 ${aiMode ? "bg-card shadow-soft font-medium" : "text-on-surface-variant"}`}
-                >
-                  <Sparkles className="h-3.5 w-3.5" /> {t("modeAI")}
-                </button>
-              </div>
+              <div className="space-y-4">
+                <TooltipProvider>
+                  {[
+                    { state: qProducts, set: setQProducts, label: t("qPhysicalProducts"), hint: t("qPhysicalProductsHint") },
+                    { state: qEmployees, set: setQEmployees, label: t("qEmployees"), hint: t("qEmployeesHint") },
+                    { state: qLoans, set: setQLoans, label: t("qLoans"), hint: t("qLoansHint") },
+                    { state: qServices, set: setQServices, label: t("qServices"), hint: t("qServicesHint") },
+                  ].map((q, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 border border-border-default rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-base cursor-pointer" onClick={() => {
+                          q.set(!q.state);
+                          generateCOA();
+                        }}>
+                          {q.label}
+                        </Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-on-surface-variant hover:text-primary cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs text-sm">
+                            <p>{q.hint}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <Switch checked={q.state} onCheckedChange={(v) => {
+                        q.set(v);
+                        setTimeout(generateCOA, 0); // Allow state to update
+                      }} />
+                    </div>
+                  ))}
+                </TooltipProvider>
 
-              {!aiMode ? (
-                <div className="space-y-2">
-                  {DEFAULT_ACCOUNTS.map((a) => {
-                    const checked = accounts.includes(a.id);
-                    return (
-                      <label
-                        key={a.id}
-                        className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer ${
-                          checked ? "border-primary bg-primary/5" : "border-border-default"
-                        }`}
-                      >
-                        <span className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(e) =>
-                              setAccounts((acc) =>
-                                e.target.checked ? [...acc, a.id] : acc.filter((x) => x !== a.id),
-                              )
-                            }
-                            className="h-4 w-4 accent-primary"
-                          />
-                          <span className="font-medium">{a.name}</span>
-                        </span>
-                        <span className="text-xs text-on-surface-variant">{a.type}</span>
-                      </label>
-                    );
-                  })}
+                <div className="mt-8 border-t border-border-default pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold">{t("customAccountsPreview")}</h3>
+                    <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)} className="gap-1">
+                      <Plus className="h-4 w-4" /> {t("addCustomAccount")}
+                    </Button>
+                  </div>
+                  <div className="bg-surface-container rounded-xl p-3 max-h-60 overflow-y-auto space-y-1">
+                    {customCOA.map((n) => <TreeRow key={n.id} node={n} depth={0} />)}
+                  </div>
                 </div>
-              ) : (
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <UploadCard icon={FileText} label={t("uploadPDFs")} hint={t("dropBankPDFs")} />
-                  <UploadCard icon={Video} label={t("recordVideo")} hint={t("describeBusiness")} />
-                </div>
-              )}
+              </div>
             </StepWrap>
           )}
 
           <div className="mt-8 flex items-center justify-between">
-            <Button variant="ghost" onClick={back} disabled={step === 0} className="gap-1.5">
-              <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t("back")}
-            </Button>
-            <Button onClick={next} className="bg-gradient-primary gap-1.5">
+            {step === 3 ? (
+              <Button variant="ghost" onClick={handleSkipCOA} className="text-on-surface-variant">
+                {t("skipCOA")}
+              </Button>
+            ) : (
+              <Button variant="ghost" onClick={back} disabled={step === 0} className="gap-1.5">
+                <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t("back")}
+              </Button>
+            )}
+
+            <Button onClick={handleNext} className="bg-gradient-primary gap-1.5">
               {step === STEPS.length - 1 ? t("finish") : t("continue")}
               <ArrowRight className="h-4 w-4 rtl:rotate-180" />
             </Button>
           </div>
         </div>
       </main>
+
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("addCustomAccount")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-1.5">
+              <Label>Category (Level 1)</Label>
+              <select 
+                value={newAccParent} 
+                onChange={(e) => setNewAccParent(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                {DEFAULT_COA.map((n) => (
+                  <option key={n.id} value={n.id}>{n.code} - {n.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("accountCode")}</Label>
+              <Input value={newAccCode} onChange={(e) => setNewAccCode(e.target.value)} placeholder="e.g. 5800" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("accountName")}</Label>
+              <Input value={newAccName} onChange={(e) => setNewAccName(e.target.value)} placeholder="e.g. Marketing" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>{t("cancel")}</Button>
+            <Button className="bg-gradient-primary" onClick={handleAddCustomAccount}>{t("saveChanges")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -245,17 +363,24 @@ function StepWrap({
   );
 }
 
-function UploadCard({ icon: Icon, label, hint }: { icon: React.ElementType; label: string; hint: string }) {
+function TreeRow({ node, depth }: { node: COANode; depth: number }) {
+  const [open, setOpen] = useState(false);
+  const hasChildren = !!node.children?.length;
   return (
-    <button
-      type="button"
-      className="p-6 rounded-xl border-2 border-dashed border-border-default hover:border-primary hover:bg-primary/5 transition text-start"
-    >
-      <Icon className="h-6 w-6 text-primary" />
-      <p className="mt-2 font-medium text-sm">{label}</p>
-      <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-1">
-        <Upload className="h-3 w-3" /> {hint}
-      </p>
-    </button>
+    <>
+      <div
+        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-subtle cursor-pointer"
+        style={{ paddingInlineStart: depth * 20 + 4 }}
+        onClick={() => hasChildren && setOpen(!open)}
+      >
+        {hasChildren ? (
+          <ChevronRight className={`h-4 w-4 text-on-surface-variant transition-transform ${open ? "rotate-90" : ""} rtl:rotate-180 rtl:${open ? "-rotate-90" : ""}`} />
+        ) : <span className="w-4" />}
+        {hasChildren ? <Folder className="h-4 w-4 text-primary" /> : <FileText className="h-4 w-4 text-on-surface-variant" />}
+        <span className="text-xs text-on-surface-variant font-mono w-10">{node.code}</span>
+        <span className={`text-sm ${hasChildren ? "font-semibold" : ""}`}>{node.name}</span>
+      </div>
+      {open && node.children?.map((c) => <TreeRow key={c.id} node={c} depth={depth + 1} />)}
+    </>
   );
 }
